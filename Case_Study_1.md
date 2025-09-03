@@ -22,7 +22,7 @@ CREATE TABLE cloned_covid19.locations(
 - choose the file
 - customize. configure metadata structure
   
-!sql_projects/blob/main/pictures/01.png
+![01](images/01.png)
 
 #### 3. In Table locations the 496th rows is a null in column iso2. Update null into 'NA'.
 
@@ -64,7 +64,7 @@ location_id int unsigned,
 confirmed bigint,
 deaths bigint
 
-<img src="/images/02.png" width="50%">
+!/images/02.png
 
 
 - import the data as we've previously demonstrated.
