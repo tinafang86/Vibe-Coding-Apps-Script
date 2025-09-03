@@ -22,7 +22,7 @@ CREATE TABLE cloned_covid19.locations(
 - choose the file
 - customize. configure metadata structure
   
-<img src="/images/01.png" width="50%">
+!sql_projects/blob/main/pictures/01.png
 
 #### 3. In Table locations the 496th rows is a null in column iso2. Update null into 'NA'.
 
