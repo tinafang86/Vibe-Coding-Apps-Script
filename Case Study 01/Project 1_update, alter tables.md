@@ -1,4 +1,4 @@
-# CASE STUDY 1: Create, Alter, Modify table
+## Project 1: Create, Alter, Modify table
 
 #### 1. Create a database named "cloned_covid19". Assigned charset = utf8mb4 and collation = utf8mb4_unicode_ci
 
