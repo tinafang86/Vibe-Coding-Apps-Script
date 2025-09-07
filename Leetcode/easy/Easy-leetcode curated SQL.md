@@ -449,7 +449,7 @@ ORDER BY id ASC;
 
 Write a solution to find the average selling price for each product. average_price should be rounded to 2 decimal places. If a product does not have any sold units, its average selling price is assumed to be 0.
 
-- 每個產品的avg price, round (avg_price, 2).
+- 每個產品的avg price, round (avg_price, 2)
 - 沒有sold unit則avg price = 0
 
 Input: 
@@ -480,3 +480,305 @@ Output:
 |------------|---------------|
 | 1          | 6.96          |
 | 2          | 16.96         |
+
+- 這題很難，JOIN之後發現purchase_date和後面的start_date, end_date對不起來
+
+```sql
+SELECT *
+FROM UnitsSold AS un
+JOIN Prices AS p ON un.product_id = p.product_id;
+```
+
+<img src="pictures_leetcode/01.png" width="50%">
+
+- 因此，透過where讓目前的purchase_date和後面的start_date, end_date, price可以配對起來
+```sql
+SELECT *
+FROM UnitsSold AS un
+JOIN Prices AS p ON un.product_id = p.product_id
+WHERE un.purchase_date BETWEEN p.start_date AND p.end_date;
+```
+
+- 因為隱藏測資中有銷量為0的資料，使用right join保留所有資料
+- where部分用 or 保留0的資料
+- ifnull將null轉會為0
+
+```sql
+WITH CTE AS (
+SELECT un.product_id,
+       un.units,
+       p.price
+FROM UnitsSold AS un
+right JOIN Prices AS p ON un.product_id = p.product_id
+WHERE (un.purchase_date BETWEEN p.start_date AND p.end_date) or
+      un.units is null)
+SELECT product_id,
+       ifnull(round(sum(units * price) / sum(units),2),0) AS average_price
+FROM CTE
+GROUP BY product_id;
+```
+
+## 1280. Students and Examinations
+
+Write a solution to find the number of times each student attended each exam.
+
+Return the result table ordered by student_id and subject_name.
+
+Input: 
+
+Students table:
+
+| student_id | student_name |
+|------------|-------------|
+| 1          | Alice        |
+| 2          | Bob          |
+| 13         | John         |
+| 6          | Alex         |
+
+Subjects table:
+
+| subject_name |
+|--------------|
+| Math         |
+| Physics      |
+| Programming  |
+
+Examinations table:
+
+| student_id | subject_name |
+|------------|--------------|
+| 1          | Math         |
+| 1          | Physics      |
+| 1          | Programming  |
+| 2          | Programming  |
+| 1          | Physics      |
+| 1          | Math         |
+| 13         | Math         |
+| 13         | Programming  |
+| 13         | Physics      |
+| 2          | Math         |
+| 1          | Math         |
+
+Output: 
+
+| student_id | student_name | subject_name | attended_exams |
+|------------  |--------------|--------------|----------------|
+| 1          | Alice        | Math         | 3              |
+| 1          | Alice        | Physics      | 2              |
+| 1          | Alice        | Programming  | 1              |
+| 2          | Bob          | Math         | 1              |
+| 2          | Bob          | Physics      | 0              |
+| 2          | Bob          | Programming  | 1              |
+| 6          | Alex         | Math         | 0              |
+| 6          | Alex         | Physics      | 0              |
+| 6          | Alex         | Programming  | 0              |
+| 13         | John         | Math         | 1              |
+| 13         | John         | Physics      | 1              |
+| 13         | John         | Programming  | 1              |
+
+- 難
+- 所有學生配對的所有科目都應該呈現 （如果沒有該科目NULL需補上0)，因此需要排列組合列出所有可能->enumerate->cross join 笛卡爾乘機
+
+## 1179. Reformat Department Table
+
+Input: 
+Department table:
+
+| id   | revenue | month |
+|------|---------|-------|
+| 1    | 8000    | Jan   |
+| 2    | 9000    | Jan   |
+| 3    | 10000   | Feb   |
+| 1    | 7000    | Feb   |
+| 1    | 6000    | Mar   |
+
+Output: 
+
+| id   | Jan_Revenue | Feb_Revenue | Mar_Revenue | ... | Dec_Revenue |
+|------|-------------|-------------|-------------|----|-------------|
+| 1    | 8000        | 7000        | 6000        | ... | null        |
+| 2    | 9000        | null        | null        | ... | null        |
+| 3    | null        | 10000       | null        | ... | null        |
+
+- Reformat the table such that there is a department id column and a revenue column for each month. Return the result table in any order.
+reformat the table
+
+#### 解法一
+
+- SQL和PYTHON一樣有if語法，用法為：IF(條件),值,否則換成另個值 as xxx
+- SQL本身在條件判斷是用case when，請見解法二
+
+```sql
+SELECT id,
+       sum(IF (MONTH = 'Jan',revenue, NULL)) AS Jan_Revenue, -- if month = Jan then revenue, else print null
+       sum(IF (MONTH = 'Feb',revenue, NULL)) AS Feb_Revenue,
+       sum(IF (MONTH = 'Mar',revenue, NULL)) AS Mar_Revenue,
+       sum(IF (MONTH = 'Apr',revenue, NULL)) AS Apr_Revenue,
+       sum(IF (MONTH = 'May',revenue, NULL)) AS May_Revenue,
+       sum(IF (MONTH = 'Jun',revenue, NULL)) AS Jun_Revenue,
+       sum(IF (MONTH = 'Jul',revenue, NULL)) AS Jul_Revenue,
+       sum(IF (MONTH = 'Aug',revenue, NULL)) AS Aug_Revenue,
+       sum(IF (MONTH = 'Sep',revenue, NULL)) AS Sep_Revenue,
+       sum(IF (MONTH = 'Oct',revenue, NULL)) AS Oct_Revenue,
+       sum(IF (MONTH = 'Nov',revenue, NULL)) AS Nov_Revenue,
+       sum(IF (MONTH = 'Dec',revenue, NULL)) AS Dec_Revenue
+FROM Department
+GROUP BY id;
+```
+
+#### 解法二
+
+```sql
+SELECT id,
+
+    SUM(CASE WHEN MONTH = 'Jan' THEN revenue ELSE NULL END) AS Jan_Revenue,
+    SUM(CASE WHEN MONTH = 'Feb' THEN revenue ELSE NULL END) AS Feb_Revenue,
+    SUM(CASE WHEN MONTH = 'Mar' THEN revenue ELSE NULL END) AS Mar_Revenue,
+    SUM(CASE WHEN MONTH = 'Apr' THEN revenue ELSE NULL END) AS Apr_Revenue,
+    SUM(CASE WHEN MONTH = 'May' THEN revenue ELSE NULL END) AS May_Revenue,
+    SUM(CASE WHEN MONTH = 'Jun' THEN revenue ELSE NULL END) AS Jun_Revenue,
+    SUM(CASE WHEN MONTH = 'Jul' THEN revenue ELSE NULL END) AS Jul_Revenue,
+    SUM(CASE WHEN MONTH = 'Aug' THEN revenue ELSE NULL END) AS Aug_Revenue,
+    SUM(CASE WHEN MONTH = 'Sep' THEN revenue ELSE NULL END) AS Sep_Revenue,
+    SUM(CASE WHEN MONTH = 'Oct' THEN revenue ELSE NULL END) AS Oct_Revenue,
+    SUM(CASE WHEN MONTH = 'Nov' THEN revenue ELSE NULL END) AS Nov_Revenue,
+    SUM(CASE WHEN MONTH = 'Dec' THEN revenue ELSE NULL END) AS Dec_Revenue
+
+FROM Department
+GROUP BY id;
+```
+
+## 1667. Fix Names in a Table
+
+- Write a solution to fix the names so that only the first character is uppercase and the rest are lowercase. Return the result table ordered by user_id.
+
+Input: 
+
+Users table:
+
+| user_id | name  |
+|---------|-------|
+| 1       | aLice |
+| 2       | bOB   |
+
+Output: 
+
+| user_id | name  |
+|---------|-------|
+| 1       | Alice |
+| 2       | Bob   |
+
+- 解法，全部改成小寫後，再將第一個字改為大寫
+- 把字母拆兩半，字首以及字首後的字，以concat連接
+
+#### 解法一
+```sql
+SELECT user_id, 
+       CONCAT(UPPER(LEFT(LOWER(name), 1)), SUBSTRING(LOWER(name), 2)) AS name
+FROM Users;
+```
+
+#### 解法二
+- 先將全小寫的結果存入window function裡面，在針對字母拆分字首大寫、其他字小寫的處理
+- 取字首：upper(Substr(name,1,1))
+- 取其他字：substr(name,2) ->從第二個字開始
+
+```sql
+WITH CTE AS (
+SELECT user_id,
+       lower(name) AS name
+FROM Users)
+
+SELECT user_id,
+       concat (upper(Substr(name,1,1)),substr(name,2))
+ FROM CTE;
+
+```
+
+## 1407. Top Travellers
+
+- Write a solution to report the distance traveled by each user. Return the result table ordered by travelled_distance in descending order, if two or more users traveled the same distance, order them by their name in ascending order.
+
+Input: 
+
+Users table:
+
+| id   | name      |
+|------|-----------|
+| 1    | Alice     |
+| 2    | Bob       |
+| 3    | Alex      |
+| 4    | Donald    |
+| 7    | Lee       |
+| 13   | Jonathan  |
+| 19   | Elvis     |
+
+Rides table:
+
+| id   | user_id  | distance |
+|------|----------|----------|
+| 1    | 1        | 120      |
+| 2    | 2        | 317      |
+| 3    | 3        | 222      |
+| 4    | 7        | 100      |
+| 5    | 13       | 312      |
+| 6    | 19       | 50       |
+| 7    | 7        | 120      |
+| 8    | 19       | 400      |
+| 9    | 7        | 230      |
+
+Output: 
+
+| name     | travelled_distance |
+|----------|--------------------|
+| Elvis    | 450                |
+| Lee      | 450                |
+| Bob      | 317                |
+| Jonathan | 312                |
+| Alex     | 222                |
+| Alice    | 120                |
+| Donald   | 0                  |
+
+```sql
+SELECT u.name,
+       ifnull(sum(r.distance),0) AS travelled_distance
+FROM users AS u
+LEFT JOIN Rides AS r ON u.id = r.user_id
+GROUP BY u.id
+ORDER BY sum(r.distance) DESC,
+         u.name ASC;
+
+```
+
+## 1517. Find Users With Valid E-Mails
+
+Write a solution to find the users who have valid emails.
+
+A valid e-mail has a prefix name and a domain where:
+
+The prefix name is a string that may contain letters (upper or lower case), digits, underscore '_', period '.', and/or dash '-'. The prefix name must start with a letter.
+The domain is '@leetcode.com'.
+
+
+Input: 
+
+Users table:
+
+| user_id | name      | mail                    |
+|---------|-----------|-------------------------|
+| 1       | Winston   | winston@leetcode.com    |
+| 2       | Jonathan  | jonathanisgreat         |
+| 3       | Annabelle | bella-@leetcode.com     |
+| 4       | Sally     | sally.come@leetcode.com |
+| 5       | Marwan    | quarz#2020@leetcode.com |
+| 6       | David     | david69@gmail.com       |
+| 7       | Shapiro   | .shapo@leetcode.com     |
+
+Output: 
+
+| user_id | name      | mail                    |
+|---------|-----------|-------------------------|
+| 1       | Winston   | winston@leetcode.com    |
+| 3       | Annabelle | bella-@leetcode.com     |
+| 4       | Sally     | sally.come@leetcode.com |
+
